@@ -43,15 +43,13 @@ export const contract = {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
-            "type": {
+            "id": {
               "type": "string",
-              "enum": [
-                "text",
-                "audio",
-                "video",
-                "photos",
-                ""
-              ]
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "type": {
+              "type": "string"
             },
             "file": {
               "type": "array",
@@ -69,38 +67,25 @@ export const contract = {
               "type": "boolean"
             },
             "created": {
-              "type": "string"
+              "type": "string",
+              "format": "date-time"
             },
             "updated": {
-              "type": "string"
-            },
-            "id": {
-              "type": "string"
-            },
-            "collectionId": {
-              "type": "string"
-            },
-            "collectionName": {
-              "type": "string"
+              "type": "string",
+              "format": "date-time"
             }
           },
           "required": [
+            "id",
             "type",
             "file",
             "content",
             "transcription",
             "reviewed",
             "created",
-            "updated",
-            "id",
-            "collectionId",
-            "collectionName"
+            "updated"
           ],
           "additionalProperties": false
-        },
-        "BAD_REQUEST": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "string"
         }
       }
     },
@@ -137,15 +122,13 @@ export const contract = {
               "items": {
                 "type": "object",
                 "properties": {
-                  "type": {
+                  "id": {
                     "type": "string",
-                    "enum": [
-                      "text",
-                      "audio",
-                      "video",
-                      "photos",
-                      ""
-                    ]
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "type": {
+                    "type": "string"
                   },
                   "file": {
                     "type": "array",
@@ -163,32 +146,23 @@ export const contract = {
                     "type": "boolean"
                   },
                   "created": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "date-time"
                   },
                   "updated": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "type": "string"
-                  },
-                  "collectionId": {
-                    "type": "string"
-                  },
-                  "collectionName": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "date-time"
                   }
                 },
                 "required": [
+                  "id",
                   "type",
                   "file",
                   "content",
                   "transcription",
                   "reviewed",
                   "created",
-                  "updated",
-                  "id",
-                  "collectionId",
-                  "collectionName"
+                  "updated"
                 ],
                 "additionalProperties": false
               }
@@ -240,8 +214,7 @@ export const contract = {
         }
       },
       "output": {
-        "NO_CONTENT": true,
-        "NOT_FOUND": true
+        "NO_CONTENT": true
       }
     },
     "toggleReviewed": {
@@ -271,15 +244,13 @@ export const contract = {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
-            "type": {
+            "id": {
               "type": "string",
-              "enum": [
-                "text",
-                "audio",
-                "video",
-                "photos",
-                ""
-              ]
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "type": {
+              "type": "string"
             },
             "file": {
               "type": "array",
@@ -297,40 +268,26 @@ export const contract = {
               "type": "boolean"
             },
             "created": {
-              "type": "string"
+              "type": "string",
+              "format": "date-time"
             },
             "updated": {
-              "type": "string"
-            },
-            "id": {
-              "type": "string"
-            },
-            "collectionId": {
-              "type": "string"
-            },
-            "collectionName": {
-              "type": "string"
+              "type": "string",
+              "format": "date-time"
             }
           },
           "required": [
+            "id",
             "type",
             "file",
             "content",
             "transcription",
             "reviewed",
             "created",
-            "updated",
-            "id",
-            "collectionId",
-            "collectionName"
+            "updated"
           ],
           "additionalProperties": false
-        },
-        "BAD_REQUEST": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "string"
-        },
-        "NOT_FOUND": true
+        }
       }
     },
     "update": {
@@ -373,15 +330,13 @@ export const contract = {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
-            "type": {
+            "id": {
               "type": "string",
-              "enum": [
-                "text",
-                "audio",
-                "video",
-                "photos",
-                ""
-              ]
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "type": {
+              "type": "string"
             },
             "file": {
               "type": "array",
@@ -399,36 +354,26 @@ export const contract = {
               "type": "boolean"
             },
             "created": {
-              "type": "string"
+              "type": "string",
+              "format": "date-time"
             },
             "updated": {
-              "type": "string"
-            },
-            "id": {
-              "type": "string"
-            },
-            "collectionId": {
-              "type": "string"
-            },
-            "collectionName": {
-              "type": "string"
+              "type": "string",
+              "format": "date-time"
             }
           },
           "required": [
+            "id",
             "type",
             "file",
             "content",
             "transcription",
             "reviewed",
             "created",
-            "updated",
-            "id",
-            "collectionId",
-            "collectionName"
+            "updated"
           ],
           "additionalProperties": false
-        },
-        "NOT_FOUND": true
+        }
       }
     }
   },
@@ -462,12 +407,7 @@ export const contract = {
         "OK": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "string"
-        },
-        "BAD_REQUEST": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "string"
-        },
-        "NOT_FOUND": true
+        }
       }
     },
     "transcribeExisted": {
@@ -496,12 +436,7 @@ export const contract = {
         "OK": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "string"
-        },
-        "BAD_REQUEST": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "string"
-        },
-        "NOT_FOUND": true
+        }
       }
     },
     "transcribeNew": {
@@ -518,10 +453,6 @@ export const contract = {
       "input": {},
       "output": {
         "OK": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "string"
-        },
-        "BAD_REQUEST": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "string"
         }
@@ -567,15 +498,13 @@ export const contract = {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
-            "type": {
+            "id": {
               "type": "string",
-              "enum": [
-                "text",
-                "audio",
-                "video",
-                "photos",
-                ""
-              ]
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "type": {
+              "type": "string"
             },
             "file": {
               "type": "array",
@@ -593,36 +522,26 @@ export const contract = {
               "type": "boolean"
             },
             "created": {
-              "type": "string"
+              "type": "string",
+              "format": "date-time"
             },
             "updated": {
-              "type": "string"
-            },
-            "id": {
-              "type": "string"
-            },
-            "collectionId": {
-              "type": "string"
-            },
-            "collectionName": {
-              "type": "string"
+              "type": "string",
+              "format": "date-time"
             }
           },
           "required": [
+            "id",
             "type",
             "file",
             "content",
             "transcription",
             "reviewed",
             "created",
-            "updated",
-            "id",
-            "collectionId",
-            "collectionName"
+            "updated"
           ],
           "additionalProperties": false
-        },
-        "NOT_FOUND": true
+        }
       }
     }
   }

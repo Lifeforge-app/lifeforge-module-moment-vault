@@ -1,11 +1,17 @@
+import { count, desc, eq } from 'drizzle-orm'
+import { createSelectSchema } from 'drizzle-orm/zod'
 import fs from 'fs'
 import z from 'zod'
 
-import { type IPBService } from '@lifeforge/pocketbase'
-
 import forge from '../forge'
-import schema from '../schema'
+import { momentVaultEntries } from '../schema.drizzle'
 import { convertToMp3 } from '../utils/convertToMP3'
+
+const AUDIO_CONTAINER_MIMES = ['video/webm', 'video/mp4', 'video/ogg']
+
+const entryDto = createSelectSchema(momentVaultEntries).extend({
+  file: z.array(z.string())
+})
 
 export const list = forge
   .query({
@@ -17,7 +23,7 @@ export const list = forge
     },
     output: {
       OK: z.object({
-        items: z.array(schema.entries),
+        items: z.array(entryDto),
         page: z.number(),
         perPage: z.number(),
         totalItems: z.number(),
@@ -25,81 +31,30 @@ export const list = forge
       })
     }
   })
-  .callback(async ({ pb, query: { page }, response }) => {
+  .callback(async ({ db, query: { page }, response }) => {
     const parsedPage = parseInt(page ?? '1', 10) || 1
 
-    return response.ok(
-      await pb.getList
-        .collection('entries')
-        .page(parsedPage)
-        .perPage(10)
-        .sort(['-created'])
-        .execute()
-    )
+    const perPage = 10
+
+    const items = await db
+      .select()
+      .from(momentVaultEntries)
+      .orderBy(desc(momentVaultEntries.created))
+      .limit(perPage)
+      .offset((parsedPage - 1) * perPage)
+
+    const [totalRow] = await db
+      .select({ value: count() })
+      .from(momentVaultEntries)
+
+    return response.ok({
+      items,
+      page: parsedPage,
+      perPage,
+      totalItems: totalRow.value,
+      totalPages: Math.ceil(totalRow.value / perPage)
+    })
   })
-
-const createAudioEntry = async (
-  pb: IPBService<typeof schema>,
-  {
-    file,
-    transcription
-  }: {
-    file: any
-    transcription?: string
-  }
-) => {
-  if (file.mimetype !== 'audio/mp3') {
-    file.path = await convertToMp3(file.path)
-  }
-
-  const fileBuffer = fs.readFileSync(file.path)
-
-  const entry = await pb.create
-    .collection('entries')
-    .data({
-      type: 'audio',
-      file: new File([fileBuffer], file.path.split('/').pop() || 'audio.mp3'),
-      transcription
-    })
-    .execute()
-
-  fs.unlinkSync(file.path)
-
-  return entry
-}
-
-const createTextEntry = async (
-  pb: IPBService<typeof schema>,
-  content: string
-) =>
-  pb.create
-    .collection('entries')
-    .data({
-      type: 'text',
-      content
-    })
-    .execute()
-
-const createPhotosEntry = async (
-  pb: IPBService<typeof schema>,
-  files: any[]
-) => {
-  const allImages = files.map(file => {
-    const fileBuffer = fs.readFileSync(file.path)
-
-    return new File([fileBuffer], file.path.split('/').pop() || 'photo.jpg')
-  })
-
-  const entry = await pb.create
-    .collection('entries')
-    .data({
-      type: 'photos',
-      file: allImages
-    })
-    .execute()
-
-  return entry
-}
 
 export const create = forge
   .mutation({
@@ -118,15 +73,15 @@ export const create = forge
       }
     },
     output: {
-      CREATED: schema.entries,
-      BAD_REQUEST: z.string()
+      CREATED: entryDto
     }
   })
   .callback(
     async ({
-      pb,
+      db,
       body: { type, content, transcription },
       media: { files },
+      core,
       response
     }) => {
       if (type === 'audio') {
@@ -138,16 +93,49 @@ export const create = forge
           return response.badRequest('Only one audio file is allowed')
         }
 
-        if (!files[0].mimetype.startsWith('audio/')) {
+        const audio = files[0]
+
+        if (typeof audio === 'string') {
+          return response.badRequest('Invalid file')
+        }
+
+        // `file-type` detects audio-only WebM/MP4 containers as `video/*`,
+        // so accept those in addition to `audio/*`.
+        if (
+          !audio.mimeType.startsWith('audio/') &&
+          !AUDIO_CONTAINER_MIMES.includes(audio.mimeType)
+        ) {
           return response.badRequest('File must be an audio file')
         }
 
-        return response.created(
-          await createAudioEntry(pb, {
-            file: files[0],
-            transcription
+        let filePath = audio.path
+
+        if (audio.mimeType !== 'audio/mp3') {
+          filePath = await convertToMp3(filePath)
+        }
+
+        const buffer = fs.readFileSync(filePath)
+
+        const ref = await core.storage.save({
+          file: {
+            buffer,
+            originalName: 'audio.mp3',
+            mimeType: 'audio/mpeg'
+          }
+        })
+
+        fs.unlinkSync(filePath)
+
+        const [entry] = await db
+          .insert(momentVaultEntries)
+          .values({
+            type: 'audio',
+            file: ref ? [ref.key] : [],
+            transcription: transcription ?? ''
           })
-        )
+          .returning()
+
+        return response.created(entry)
       }
 
       if (type === 'text') {
@@ -155,7 +143,12 @@ export const create = forge
           return response.badRequest('Content is required for text entries')
         }
 
-        return response.created(await createTextEntry(pb, content))
+        const [entry] = await db
+          .insert(momentVaultEntries)
+          .values({ type: 'text', content })
+          .returning()
+
+        return response.created(entry)
       }
 
       if (type === 'photos') {
@@ -163,7 +156,23 @@ export const create = forge
           return response.badRequest('No files uploaded')
         }
 
-        return response.created(await createPhotosEntry(pb, files))
+        const refs = await Promise.all(
+          files.map(file =>
+            typeof file === 'string'
+              ? null
+              : core.storage.save({ file })
+          )
+        )
+
+        const [entry] = await db
+          .insert(momentVaultEntries)
+          .values({
+            type: 'photos',
+            file: refs.filter(Boolean).map(ref => ref!.key)
+          })
+          .returning()
+
+        return response.created(entry)
       }
 
       return response.badRequest('Invalid entry type')
@@ -175,45 +184,40 @@ export const update = forge
     description: 'Update content of a moment vault entry',
     input: {
       query: z.object({
-        id: z.string()
+        id: forge.existsIn(z.string(), momentVaultEntries)
       }),
       body: z.object({
         content: z.string()
       })
     },
-    existenceCheck: {
-      query: { id: 'entries' }
-    },
     output: {
-      OK: schema.entries,
-      NOT_FOUND: true
+      OK: entryDto
     }
   })
-  .callback(async ({ pb, query: { id }, body: { content }, response }) =>
-    response.ok(
-      await pb.update.collection('entries').id(id).data({ content }).execute()
-    )
-  )
+  .callback(async ({ db, query: { id }, body: { content }, response }) => {
+    const [updated] = await db
+      .update(momentVaultEntries)
+      .set({ content, updated: new Date() })
+      .where(eq(momentVaultEntries.id, id))
+      .returning()
+
+    return response.ok(updated)
+  })
 
 export const toggleReviewed = forge
   .mutation({
     description: 'Toggle reviewed status of an audio entry',
     input: {
       query: z.object({
-        id: z.string()
+        id: forge.existsIn(z.string(), momentVaultEntries)
       })
     },
-    existenceCheck: {
-      query: { id: 'entries' }
-    },
     output: {
-      OK: schema.entries,
-      BAD_REQUEST: z.string(),
-      NOT_FOUND: true
+      OK: entryDto
     }
   })
-  .callback(async ({ pb, query: { id }, response }) => {
-    const entry = await pb.getOne.collection('entries').id(id).execute()
+  .callback(async ({ db, query: { id }, response }) => {
+    const entry = (await db.query.entries.findFirst({ where: { id } }))!
 
     if (entry.type !== 'audio') {
       return response.badRequest(
@@ -221,15 +225,13 @@ export const toggleReviewed = forge
       )
     }
 
-    return response.ok(
-      await pb.update
-        .collection('entries')
-        .id(id)
-        .data({
-          reviewed: !entry.reviewed
-        })
-        .execute()
-    )
+    const [updated] = await db
+      .update(momentVaultEntries)
+      .set({ reviewed: !entry.reviewed, updated: new Date() })
+      .where(eq(momentVaultEntries.id, id))
+      .returning()
+
+    return response.ok(updated)
   })
 
 export const remove = forge
@@ -237,19 +239,25 @@ export const remove = forge
     description: 'Delete a moment vault entry',
     input: {
       query: z.object({
-        id: z.string()
+        id: forge.existsIn(z.string(), momentVaultEntries)
       })
     },
-    existenceCheck: {
-      query: { id: 'entries' }
-    },
     output: {
-      NO_CONTENT: true,
-      NOT_FOUND: true
+      NO_CONTENT: true
     }
   })
-  .callback(async ({ pb, query: { id }, response }) => {
-    await pb.delete.collection('entries').id(id).execute()
+  .callback(async ({ db, query: { id }, core, response }) => {
+    const entry = await db.query.entries.findFirst({ where: { id } })
+
+    if (entry) {
+      for (const key of entry.file) {
+        if (key) {
+          await core.storage.delete(key)
+        }
+      }
+    }
+
+    await db.delete(momentVaultEntries).where(eq(momentVaultEntries.id, id))
 
     return response.noContent()
   })

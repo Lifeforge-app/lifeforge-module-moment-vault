@@ -1,73 +1,73 @@
+import crypto from 'node:crypto'
+import { eq } from 'drizzle-orm'
+import { createSelectSchema } from 'drizzle-orm/zod'
 import fs from 'fs'
-import request from 'request'
+import os from 'os'
+import path from 'path'
+import { pipeline } from 'node:stream/promises'
 import z from 'zod'
 
 import forge from '../forge'
-import momentVaultSchemas from '../schema'
+import { momentVaultEntries } from '../schema.drizzle'
 import { convertToMp3 } from '../utils/convertToMP3'
 import { getTranscription } from '../utils/transcription'
+
+const entryDto = createSelectSchema(momentVaultEntries).extend({
+  file: z.array(z.string())
+})
 
 export const transcribeExisted = forge
   .mutation({
     description: 'Transcribe an existing audio entry',
     input: {
       query: z.object({
-        id: z.string()
+        id: forge.existsIn(z.string(), momentVaultEntries)
       })
     },
-    existenceCheck: {
-      query: { id: 'entries' }
-    },
     output: {
-      OK: z.string(),
-      BAD_REQUEST: z.string(),
-      NOT_FOUND: true
+      OK: z.string()
     }
   })
   .callback(
     async ({
-      pb,
+      db,
       query: { id },
       core: {
-        api: { getAPIKey }
+        api: { getAPIKey },
+        storage
       },
       response
     }) => {
-      const apiKey = await getAPIKey('openai', pb)
+      const apiKey = await getAPIKey('openai')
 
       if (!apiKey) {
         return response.badRequest('API key not found')
       }
 
-      const entry = await pb.getOne.collection('entries').id(id).execute()
+      const entry = await db.query.entries.findFirst({ where: { id } })
 
-      if (!entry.file) {
+      if (!entry || entry.file.length === 0) {
         return response.badRequest('No audio file found in entry')
       }
 
-      const fileURL = pb.instance.files.getURL(entry, entry.file[0])
+      const fileStream = await storage.get(entry.file[0])
+
+      if (!fileStream) {
+        return response.badRequest('Audio file not found')
+      }
+
+      const tempPath = path.join(
+        os.tmpdir(),
+        `${crypto.randomUUID()}${path.extname(entry.file[0])}`
+      )
 
       try {
-        let filePath = `medium/${fileURL.split('/').pop()}`
+        await pipeline(fileStream.stream, fs.createWriteStream(tempPath))
 
-        const fileStream = fs.createWriteStream(filePath)
-
-        request(fileURL).pipe(fileStream)
-
-        await new Promise(resolve => {
-          fileStream.on('finish', () => {
-            resolve(null)
-          })
-        })
+        let filePath = tempPath
 
         if (!filePath.endsWith('.mp3')) {
-          const mp3Path = await convertToMp3(filePath)
-
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath)
-          }
-
-          filePath = mp3Path
+          filePath = await convertToMp3(filePath)
         }
 
         const transcriptionText = await getTranscription(filePath, apiKey)
@@ -76,13 +76,10 @@ export const transcribeExisted = forge
           return response.badRequest('Transcription failed')
         }
 
-        await pb.update
-          .collection('entries')
-          .id(id)
-          .data({
-            transcription: transcriptionText
-          })
-          .execute()
+        await db
+          .update(momentVaultEntries)
+          .set({ transcription: transcriptionText, updated: new Date() })
+          .where(eq(momentVaultEntries.id, id))
 
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath)
@@ -94,10 +91,8 @@ export const transcribeExisted = forge
 
         return response.badRequest('Failed to transcribe audio file')
       } finally {
-        const filePath = `medium/${fileURL.split('/').pop()}`
-
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath)
+        if (fs.existsSync(tempPath)) {
+          fs.unlinkSync(tempPath)
         }
       }
     }
@@ -112,13 +107,11 @@ export const transcribeNew = forge
       }
     },
     output: {
-      OK: z.string(),
-      BAD_REQUEST: z.string()
+      OK: z.string()
     }
   })
   .callback(
     async ({
-      pb,
       media: { file },
       core: {
         api: { getAPIKey }
@@ -129,24 +122,26 @@ export const transcribeNew = forge
         return response.badRequest('No file uploaded')
       }
 
-      if (file.mimetype !== 'audio/mp3') {
-        file.path = await convertToMp3(file.path)
+      let filePath = file.path
+
+      if (file.mimeType !== 'audio/mp3') {
+        filePath = await convertToMp3(filePath)
       }
 
-      const apiKey = await getAPIKey('openai', pb)
+      const apiKey = await getAPIKey('openai')
 
       if (!apiKey) {
         return response.badRequest('API key not found')
       }
 
-      const transcriptionText = await getTranscription(file.path, apiKey)
+      const transcriptionText = await getTranscription(filePath, apiKey)
 
       if (!transcriptionText) {
         return response.badRequest('Transcription failed')
       }
 
-      if (fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path)
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
       }
 
       return response.ok(transcriptionText)
@@ -158,60 +153,49 @@ export const updateTranscription = forge
     description: 'Update transcription of an audio entry',
     input: {
       query: z.object({
-        id: z.string()
+        id: forge.existsIn(z.string(), momentVaultEntries)
       }),
       body: z.object({
         transcription: z.string()
       })
     },
-    existenceCheck: {
-      query: { id: 'entries' }
-    },
     output: {
-      OK: momentVaultSchemas.entries,
-      NOT_FOUND: true
+      OK: entryDto
     }
   })
-  .callback(async ({ pb, query: { id }, body: { transcription }, response }) =>
-    response.ok(
-      await pb.update
-        .collection('entries')
-        .id(id)
-        .data({
-          transcription
-        })
-        .execute()
-    )
-  )
+  .callback(async ({ db, query: { id }, body: { transcription }, response }) => {
+    const [updated] = await db
+      .update(momentVaultEntries)
+      .set({ transcription, updated: new Date() })
+      .where(eq(momentVaultEntries.id, id))
+      .returning()
+
+    return response.ok(updated)
+  })
 
 export const cleanupTranscription = forge
   .mutation({
     description: 'Clean up and improve transcription text',
     input: {
       query: z.object({
-        id: z.string(),
+        id: forge.existsIn(z.string(), momentVaultEntries),
         newText: z.string().optional()
       })
     },
-    existenceCheck: {
-      query: { id: 'entries' }
-    },
     output: {
-      OK: z.string(),
-      BAD_REQUEST: z.string(),
-      NOT_FOUND: true
+      OK: z.string()
     }
   })
   .callback(
     async ({
-      pb,
+      db,
       query: { id, newText },
       core: {
         api: { getAPIKey, fetchAI }
       },
       response
     }) => {
-      const apiKey = await getAPIKey('openai', pb)
+      const apiKey = await getAPIKey('openai')
 
       if (!apiKey) {
         return response.badRequest('API key not found')
@@ -220,7 +204,9 @@ export const cleanupTranscription = forge
       let textToCleanUp: string
 
       if (!newText) {
-        const entry = await pb.getOne.collection('entries').id(id).execute()
+        const entry = (await db.query.entries.findFirst({
+          where: { id }
+        }))!
 
         if (!entry.transcription) {
           return response.badRequest('No transcription data to clean up')
@@ -234,7 +220,6 @@ export const cleanupTranscription = forge
       const aiResponse = await fetchAI({
         provider: 'openai',
         model: 'gpt-4o-mini',
-        pb,
         messages: [
           {
             role: 'system',

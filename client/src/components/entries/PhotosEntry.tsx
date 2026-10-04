@@ -52,11 +52,7 @@ function PhotosEntry({
     const fetchPhotos = async () => {
       const photos = await Promise.all(
         entry.file!.map(async file => {
-          const fileUrl = forgeAPI.getMedia({
-            collectionId: entry.collectionId,
-            recordId: entry.id,
-            fieldId: file
-          })
+          const fileUrl = forgeAPI.getMedia({ key: file })
 
           const { height, width } = await getNaturalHeightWidth(fileUrl)
 

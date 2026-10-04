@@ -72,12 +72,10 @@ function AudioPlayer({
 
   const mediaUrl = useMemo(
     () =>
-      forgeAPI.getMedia({
-        collectionId: entry.collectionId,
-        recordId: entry.id,
-        fieldId: entry.file?.[0]
-      }),
-    [entry.collectionId, entry.id, entry.file]
+      entry.file?.[0]
+        ? forgeAPI.getMedia({ key: entry.file[0] })
+        : undefined,
+    [entry.file]
   )
 
   const onReady = useCallback(
