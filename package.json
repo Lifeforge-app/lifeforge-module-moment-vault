@@ -3,7 +3,7 @@
   "displayName": "Moment Vault",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lifeforge-app/lifeforge-module-momentVault.git"
+    "url": "https://github.com/Lifeforge-app/lifeforge-module-moment-vault.git"
   },
   "version": "0.0.1",
   "type": "module",
