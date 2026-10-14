@@ -32,7 +32,7 @@ export const list = forge
     }
   })
   .callback(async ({ db, query: { page }, response }) => {
-    const parsedPage = parseInt(page ?? '1', 10) || 1
+    const parsedPage = parseInt(page, 10) || 1
 
     const perPage = 10
 
@@ -51,8 +51,8 @@ export const list = forge
       items,
       page: parsedPage,
       perPage,
-      totalItems: totalRow.value,
-      totalPages: Math.ceil(totalRow.value / perPage)
+      totalItems: totalRow?.value ?? 0,
+      totalPages: Math.ceil((totalRow?.value ?? 0) / perPage)
     })
   })
 
@@ -95,7 +95,7 @@ export const create = forge
 
         const audio = files[0]
 
-        if (typeof audio === 'string') {
+        if (!audio || typeof audio === 'string') {
           return response.badRequest('Invalid file')
         }
 
@@ -135,6 +135,10 @@ export const create = forge
           })
           .returning()
 
+        if (!entry) {
+          return response.badRequest('Failed to create entry')
+        }
+
         return response.created(entry)
       }
 
@@ -147,6 +151,10 @@ export const create = forge
           .insert(momentVaultEntries)
           .values({ type: 'text', content })
           .returning()
+
+        if (!entry) {
+          return response.badRequest('Failed to create entry')
+        }
 
         return response.created(entry)
       }
@@ -171,6 +179,10 @@ export const create = forge
             file: refs.filter(Boolean).map(ref => ref!.key)
           })
           .returning()
+
+        if (!entry) {
+          return response.badRequest('Failed to create entry')
+        }
 
         return response.created(entry)
       }
@@ -201,6 +213,10 @@ export const update = forge
       .where(eq(momentVaultEntries.id, id))
       .returning()
 
+    if (!updated) {
+      return response.notFound()
+    }
+
     return response.ok(updated)
   })
 
@@ -230,6 +246,10 @@ export const toggleReviewed = forge
       .set({ reviewed: !entry.reviewed, updated: new Date() })
       .where(eq(momentVaultEntries.id, id))
       .returning()
+
+    if (!updated) {
+      return response.notFound()
+    }
 
     return response.ok(updated)
   })

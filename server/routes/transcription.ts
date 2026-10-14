@@ -50,7 +50,7 @@ export const transcribeExisted = forge
         return response.badRequest('No audio file found in entry')
       }
 
-      const fileStream = await storage.get(entry.file[0])
+      const fileStream = await storage.get(entry.file[0] ?? '')
 
       if (!fileStream) {
         return response.badRequest('Audio file not found')
@@ -58,7 +58,7 @@ export const transcribeExisted = forge
 
       const tempPath = path.join(
         os.tmpdir(),
-        `${crypto.randomUUID()}${path.extname(entry.file[0])}`
+        `${crypto.randomUUID()}${path.extname(entry.file[0] ?? '')}`
       )
 
       try {
@@ -169,6 +169,10 @@ export const updateTranscription = forge
       .set({ transcription, updated: new Date() })
       .where(eq(momentVaultEntries.id, id))
       .returning()
+
+    if (!updated) {
+      return response.notFound()
+    }
 
     return response.ok(updated)
   })
