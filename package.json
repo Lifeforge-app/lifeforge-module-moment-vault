@@ -5,7 +5,7 @@
     "type": "git",
     "url": "https://github.com/Lifeforge-app/lifeforge-module-moment-vault.git"
   },
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "author": "Melvin Chia <melvinchia623600@gmail.com>",
   "description": "Capture every moment, cherish your life, revisit anytime.",
