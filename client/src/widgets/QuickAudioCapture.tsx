@@ -131,7 +131,7 @@ function QuickAudioCapture() {
 
   return (
     <Widget className={styles.widget} icon="tabler:microphone">
-      <Flex ref={wrapperRef} centered flex="1" minHeight="0">
+      <Flex ref={wrapperRef} centered flex="1" height="100%" minHeight="0">
         <Button
           className={[
             styles.button,
