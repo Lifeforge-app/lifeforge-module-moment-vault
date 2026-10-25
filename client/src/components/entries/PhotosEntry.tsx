@@ -2,7 +2,6 @@ import type { MomentVaultEntry } from '@'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useEffect, useState } from 'react'
-import Zoom from 'react-medium-image-zoom'
 import PhotoAlbum from 'react-photo-album'
 
 import {
@@ -12,7 +11,8 @@ import {
   ContextMenuItem,
   Flex,
   Icon,
-  Text
+  Text,
+  ZoomableImage
 } from '@lifeforge/ui'
 
 import { forgeAPI } from '@/manifest'
@@ -87,35 +87,30 @@ function PhotosEntry({
                   photos={photos}
                   // @ts-expect-error - Some issue with the types
                   renderPhoto={({ imageProps }) => (
-                    <Box style={imageProps.style}>
-                      <Zoom zoomMargin={64}>
-                        <img
-                          alt=""
-                          src={imageProps.src}
-                          style={{
-                            borderRadius: 'var(--radius-md)',
-                            height: '100%',
-                            objectFit: 'cover',
-                            width: '100%'
-                          }}
-                        />
-                      </Zoom>
-                    </Box>
+                    <ZoomableImage
+                      alt=""
+                      fallback={null}
+                      fit="cover"
+                      height="100%"
+                      r="md"
+                      src={imageProps.src}
+                      style={imageProps.style}
+                      width="100%"
+                      zoomMargin={64}
+                    />
                   )}
                   spacing={8}
                 />
               ) : (
-                <Zoom zoomMargin={64}>
-                  <img
-                    alt=""
-                    src={photos[0].src}
-                    style={{
-                      borderRadius: 'var(--radius-md)',
-                      height: '24rem',
-                      objectFit: 'cover'
-                    }}
-                  />
-                </Zoom>
+                <ZoomableImage
+                  alt=""
+                  fallback={null}
+                  fit="cover"
+                  height="24rem"
+                  r="md"
+                  src={photos[0].src}
+                  zoomMargin={64}
+                />
               )}
             </Box>
             <ContextMenu>

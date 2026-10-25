@@ -2,7 +2,16 @@ import { useState } from 'react'
 import PhotoAlbum from 'react-photo-album'
 
 import { useModuleTranslation } from '@lifeforge/localization'
-import { Box, Button, Flex, Icon, Text, surface, toast } from '@lifeforge/ui'
+import {
+  Box,
+  Button,
+  Flex,
+  Icon,
+  Image as ImageComponent,
+  Text,
+  surface,
+  toast
+} from '@lifeforge/ui'
 
 import { forgeAPI } from '@/manifest'
 
@@ -103,11 +112,11 @@ function PhotoType({ onSuccess }: { onSuccess: () => void }) {
   return (
     <>
       <Flex
+        shadow
         bg={surface.light}
         direction="column"
         p="lg"
         r="md"
-        shadow
         width="100%"
       >
         <Flex align="center" gap="sm">
@@ -130,16 +139,14 @@ function PhotoType({ onSuccess }: { onSuccess: () => void }) {
               }))}
               // @ts-expect-error - Some issue with the types
               renderPhoto={({ imageProps }) => (
-                <img
+                <ImageComponent
                   {...imageProps}
                   alt=""
-                  style={{
-                    ...imageProps.style,
-                    borderRadius: 'var(--radius-md)',
-                    height: '100%',
-                    objectFit: 'cover',
-                    width: '100%'
-                  }}
+                  fallback={null}
+                  fit="cover"
+                  height="100%"
+                  r="md"
+                  width="100%"
                 />
               )}
               spacing={8}
