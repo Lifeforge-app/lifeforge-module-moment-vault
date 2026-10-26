@@ -1,550 +1,199 @@
-export const contract = {
-  "entries": {
-    "create": {
-      "method": "post",
-      "description": "Create a new moment vault entry",
-      "noAuth": false,
-      "encrypted": true,
-      "isDownloadable": false,
-      "media": {
-        "files": {
-          "multiple": true,
-          "optional": true
-        }
-      },
-      "input": {
-        "body": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "text",
-                "audio",
-                "photos"
-              ]
-            },
-            "content": {
-              "type": "string"
-            },
-            "transcription": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "type"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "output": {
-        "CREATED": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            },
-            "type": {
-              "type": "string"
-            },
-            "file": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "content": {
-              "type": "string"
-            },
-            "transcription": {
-              "type": "string"
-            },
-            "reviewed": {
-              "type": "boolean"
-            },
-            "created": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "updated": {
-              "type": "string",
-              "format": "date-time"
-            }
-          },
-          "required": [
-            "id",
-            "type",
-            "file",
-            "content",
-            "transcription",
-            "reviewed",
-            "created",
-            "updated"
-          ],
-          "additionalProperties": false
-        }
-      }
-    },
-    "list": {
-      "method": "get",
-      "description": "Get paginated list of moment vault entries",
-      "noAuth": false,
-      "encrypted": true,
-      "isDownloadable": false,
-      "media": null,
-      "input": {
-        "query": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "page": {
-              "default": "1",
-              "type": "string"
-            }
-          },
-          "required": [
-            "page"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "output": {
-        "OK": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "items": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                  },
-                  "type": {
-                    "type": "string"
-                  },
-                  "file": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "content": {
-                    "type": "string"
-                  },
-                  "transcription": {
-                    "type": "string"
-                  },
-                  "reviewed": {
-                    "type": "boolean"
-                  },
-                  "created": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "updated": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                },
-                "required": [
-                  "id",
-                  "type",
-                  "file",
-                  "content",
-                  "transcription",
-                  "reviewed",
-                  "created",
-                  "updated"
-                ],
-                "additionalProperties": false
-              }
-            },
-            "page": {
-              "type": "number"
-            },
-            "perPage": {
-              "type": "number"
-            },
-            "totalItems": {
-              "type": "number"
-            },
-            "totalPages": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "items",
-            "page",
-            "perPage",
-            "totalItems",
-            "totalPages"
-          ],
-          "additionalProperties": false
-        }
-      }
-    },
-    "remove": {
-      "method": "post",
-      "description": "Delete a moment vault entry",
-      "noAuth": false,
-      "encrypted": true,
-      "isDownloadable": false,
-      "media": null,
-      "input": {
-        "query": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "output": {
-        "NO_CONTENT": true
-      }
-    },
-    "toggleReviewed": {
-      "method": "post",
-      "description": "Toggle reviewed status of an audio entry",
-      "noAuth": false,
-      "encrypted": true,
-      "isDownloadable": false,
-      "media": null,
-      "input": {
-        "query": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "output": {
-        "OK": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            },
-            "type": {
-              "type": "string"
-            },
-            "file": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "content": {
-              "type": "string"
-            },
-            "transcription": {
-              "type": "string"
-            },
-            "reviewed": {
-              "type": "boolean"
-            },
-            "created": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "updated": {
-              "type": "string",
-              "format": "date-time"
-            }
-          },
-          "required": [
-            "id",
-            "type",
-            "file",
-            "content",
-            "transcription",
-            "reviewed",
-            "created",
-            "updated"
-          ],
-          "additionalProperties": false
-        }
-      }
-    },
-    "update": {
-      "method": "post",
-      "description": "Update content of a moment vault entry",
-      "noAuth": false,
-      "encrypted": true,
-      "isDownloadable": false,
-      "media": null,
-      "input": {
-        "query": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        },
-        "body": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "content": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "content"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "output": {
-        "OK": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            },
-            "type": {
-              "type": "string"
-            },
-            "file": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "content": {
-              "type": "string"
-            },
-            "transcription": {
-              "type": "string"
-            },
-            "reviewed": {
-              "type": "boolean"
-            },
-            "created": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "updated": {
-              "type": "string",
-              "format": "date-time"
-            }
-          },
-          "required": [
-            "id",
-            "type",
-            "file",
-            "content",
-            "transcription",
-            "reviewed",
-            "created",
-            "updated"
-          ],
-          "additionalProperties": false
-        }
-      }
-    }
-  },
-  "transcribe": {
-    "cleanupTranscription": {
-      "method": "post",
-      "description": "Clean up and improve transcription text",
-      "noAuth": false,
-      "encrypted": true,
-      "isDownloadable": false,
-      "media": null,
-      "input": {
-        "query": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "newText": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "output": {
-        "OK": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "string"
-        }
-      }
-    },
-    "transcribeExisted": {
-      "method": "post",
-      "description": "Transcribe an existing audio entry",
-      "noAuth": false,
-      "encrypted": true,
-      "isDownloadable": false,
-      "media": null,
-      "input": {
-        "query": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "output": {
-        "OK": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "string"
-        }
-      }
-    },
-    "transcribeNew": {
-      "method": "post",
-      "description": "Transcribe a new audio file",
-      "noAuth": false,
-      "encrypted": true,
-      "isDownloadable": false,
-      "media": {
-        "file": {
-          "optional": false
-        }
-      },
-      "input": {},
-      "output": {
-        "OK": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "string"
-        }
-      }
-    },
-    "updateTranscription": {
-      "method": "post",
-      "description": "Update transcription of an audio entry",
-      "noAuth": false,
-      "encrypted": true,
-      "isDownloadable": false,
-      "media": null,
-      "input": {
-        "query": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        },
-        "body": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "transcription": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "transcription"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "output": {
-        "OK": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            },
-            "type": {
-              "type": "string"
-            },
-            "file": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "content": {
-              "type": "string"
-            },
-            "transcription": {
-              "type": "string"
-            },
-            "reviewed": {
-              "type": "boolean"
-            },
-            "created": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "updated": {
-              "type": "string",
-              "format": "date-time"
-            }
-          },
-          "required": [
-            "id",
-            "type",
-            "file",
-            "content",
-            "transcription",
-            "reviewed",
-            "created",
-            "updated"
-          ],
-          "additionalProperties": false
-        }
-      }
-    }
-  }
-} as const
+export type EndpointEntriesRemove_OutputNO_CONTENT = void;
+export type EndpointTranscribeCleanupTranscription_OutputOK = string;
+export type EndpointTranscribeTranscribeExisted_OutputOK = string;
+export type EndpointTranscribeTranscribeNew_OutputOK = string;
 
-export default contract
+export interface Contract {
+  entries: {
+    create: EndpointEntriesCreate;
+    list: EndpointEntriesList;
+    remove: EndpointEntriesRemove;
+    toggleReviewed: EndpointEntriesToggleReviewed;
+    update: EndpointEntriesUpdate;
+  };
+  transcribe: {
+    cleanupTranscription: EndpointTranscribeCleanupTranscription;
+    transcribeExisted: EndpointTranscribeTranscribeExisted;
+    transcribeNew: EndpointTranscribeTranscribeNew;
+    updateTranscription: EndpointTranscribeUpdateTranscription;
+  };
+}
+export interface EndpointEntriesCreate {
+  method: "post";
+  input: {
+    body?: EndpointEntriesCreate_InputBody;
+  };
+  output: {
+    CREATED: EndpointEntriesCreate_OutputCREATED;
+  };
+  media: {files: {multiple: true; optional: true}};
+}
+export interface EndpointEntriesCreate_InputBody {
+  type: "text" | "audio" | "photos";
+  content?: string;
+  transcription?: string;
+}
+export interface EndpointEntriesCreate_OutputCREATED {
+  id: string;
+  type: string;
+  file: string[];
+  content: string;
+  transcription: string;
+  reviewed: boolean;
+  created: string;
+  updated: string;
+}
+export interface EndpointEntriesList {
+  method: "get";
+  input: {
+    query?: EndpointEntriesList_InputQuery;
+  };
+  output: {
+    OK: EndpointEntriesList_OutputOK;
+  };
+  media: null;
+}
+export interface EndpointEntriesList_InputQuery {
+  page: string;
+}
+export interface EndpointEntriesList_OutputOK {
+  items: {
+    id: string;
+    type: string;
+    file: string[];
+    content: string;
+    transcription: string;
+    reviewed: boolean;
+    created: string;
+    updated: string;
+  }[];
+  page: number;
+  perPage: number;
+  totalItems: number;
+  totalPages: number;
+}
+export interface EndpointEntriesRemove {
+  method: "post";
+  input: {
+    query?: EndpointEntriesRemove_InputQuery;
+  };
+  output: {
+    NO_CONTENT: EndpointEntriesRemove_OutputNO_CONTENT;
+  };
+  media: null;
+}
+export interface EndpointEntriesRemove_InputQuery {
+  id: string;
+}
+export interface EndpointEntriesToggleReviewed {
+  method: "post";
+  input: {
+    query?: EndpointEntriesToggleReviewed_InputQuery;
+  };
+  output: {
+    OK: EndpointEntriesToggleReviewed_OutputOK;
+  };
+  media: null;
+}
+export interface EndpointEntriesToggleReviewed_InputQuery {
+  id: string;
+}
+export interface EndpointEntriesToggleReviewed_OutputOK {
+  id: string;
+  type: string;
+  file: string[];
+  content: string;
+  transcription: string;
+  reviewed: boolean;
+  created: string;
+  updated: string;
+}
+export interface EndpointEntriesUpdate {
+  method: "post";
+  input: {
+    query?: EndpointEntriesUpdate_InputQuery;
+    body?: EndpointEntriesUpdate_InputBody;
+  };
+  output: {
+    OK: EndpointEntriesUpdate_OutputOK;
+  };
+  media: null;
+}
+export interface EndpointEntriesUpdate_InputQuery {
+  id: string;
+}
+export interface EndpointEntriesUpdate_InputBody {
+  content: string;
+}
+export interface EndpointEntriesUpdate_OutputOK {
+  id: string;
+  type: string;
+  file: string[];
+  content: string;
+  transcription: string;
+  reviewed: boolean;
+  created: string;
+  updated: string;
+}
+export interface EndpointTranscribeCleanupTranscription {
+  method: "post";
+  input: {
+    query?: EndpointTranscribeCleanupTranscription_InputQuery;
+  };
+  output: {
+    OK: EndpointTranscribeCleanupTranscription_OutputOK;
+  };
+  media: null;
+}
+export interface EndpointTranscribeCleanupTranscription_InputQuery {
+  id: string;
+  newText?: string;
+}
+export interface EndpointTranscribeTranscribeExisted {
+  method: "post";
+  input: {
+    query?: EndpointTranscribeTranscribeExisted_InputQuery;
+  };
+  output: {
+    OK: EndpointTranscribeTranscribeExisted_OutputOK;
+  };
+  media: null;
+}
+export interface EndpointTranscribeTranscribeExisted_InputQuery {
+  id: string;
+}
+export interface EndpointTranscribeTranscribeNew {
+  method: "post";
+  input: {};
+  output: {
+    OK: EndpointTranscribeTranscribeNew_OutputOK;
+  };
+  media: {file: {optional: false}};
+}
+export interface EndpointTranscribeUpdateTranscription {
+  method: "post";
+  input: {
+    query?: EndpointTranscribeUpdateTranscription_InputQuery;
+    body?: EndpointTranscribeUpdateTranscription_InputBody;
+  };
+  output: {
+    OK: EndpointTranscribeUpdateTranscription_OutputOK;
+  };
+  media: null;
+}
+export interface EndpointTranscribeUpdateTranscription_InputQuery {
+  id: string;
+}
+export interface EndpointTranscribeUpdateTranscription_InputBody {
+  transcription: string;
+}
+export interface EndpointTranscribeUpdateTranscription_OutputOK {
+  id: string;
+  type: string;
+  file: string[];
+  content: string;
+  transcription: string;
+  reviewed: boolean;
+  created: string;
+  updated: string;
+}
